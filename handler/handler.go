@@ -6,6 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/16Cloud/meta"
+	"github.com/16Cloud/util"
 )
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,17 +28,26 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("failed to get data err:%s", err)
 			defer file.Close()
-			newFile, err := os.Create("/tmp/" + head.Filename)
+
+			fileMeta := meta.FileMeta{
+				FileName: head.Filename,
+				Location: "/tmp/" + head.Filename,
+				UploadAt: time.Now().Format("2021-0701 08:01:01"),
+			}
+			newFile, err := os.Create(fileMeta.Location)
 			if err != nil {
 				fmt.Printf("failed to create file err:%s\n", err.Error())
 
 			}
 			defer newFile.Close()
-			_, err = io.Copy(newFile, file)
+			fileMeta.FileSize, err = io.Copy(newFile, file)
 			if err != nil {
 				fmt.Printf("failed to save data into file err:%s", err.Error())
 				return
 			}
+			newFile.Seek(0, 0)
+			fileMeta.FileSha1 = util.FileSha1(newFile)
+			meta.UpdateFileMeta(fileMeta)
 			http.Redirect(w, r, "file/upload/suc", http.StatusFound)
 		}
 
