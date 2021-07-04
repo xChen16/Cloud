@@ -1,1 +1,3 @@
-# Distributed-Storage-Cloud
+# 16Cloud
+
+Distributed file cloud storage system
